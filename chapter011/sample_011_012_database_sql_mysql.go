@@ -11,6 +11,12 @@ func main() {
 	db, err := sql.Open("mysql", "test:MyPasswd007.@tcp(foreman.example.com:3306)/test?charset=utf8")
 	checkErr(err)
 
+	// dataSourceName支持格式如下：
+	// user@unix(/path/to/socket)/dbname?charset=utf8
+	// user:password@tcp(localhost:5555)/dbname?charset=utf8
+	// user:password@/dbname
+	// user:password@tcp([de:ad:be:ef::ca:fe]:80/dbname)
+
 	// 插入数据
 	stmt, err := db.Prepare("INSERT userinfo set username=?, departname=?, created=?")
 	checkErr(err)
