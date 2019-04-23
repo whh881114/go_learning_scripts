@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	outputFile, err := os.Create("test3.txt.gz")
+	outputFile, err := os.Create("D:\\GoProjects\\src\\goTraining\\chapter013\\test3.txt.gz")
 	if err != nil {
 		log.Fatal(err)
 	}
