@@ -28,3 +28,5 @@ func main() {
 // 1. 生成密钥：openssl genrsa -out ssl.key 2048
 // 2. 根据密钥生成证书请求：openssl req -new -key ssl.key -out ssl.csr
 // 3. 自签名，生成私有证书：openssl x509 -req -in ssl.csr -signkey ssl.key -out ssl.crt
+
+// 实际运行可以访问，但是页面是404。
