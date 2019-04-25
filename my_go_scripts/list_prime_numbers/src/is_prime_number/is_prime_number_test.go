@@ -1,22 +1,28 @@
 package is_prime_number
 
 import (
+	"fmt"
 	"testing"
 )
 
 func TestIsPrimeNumber(t *testing.T) {
-	r, s := IsPrimeNumber(5)
+	chs := make([]chan int, 2)
+	r, s := IsPrimeNumber(chs[0], 5)
 	if s == true {
 		t.Logf("测试实例正确：输入的是%d，返回状态是%v, 它是素数，与期望相同。", r, s)
 	} else {
 		t.Errorf("测试实例失败：输入的是%d，返回状态是%v，它本来是素数，测试结果为非素数。", r, s)
 	}
 
-	r, s = IsPrimeNumber(10)
+	r, s = IsPrimeNumber(chs[1], 10)
 	if s == false {
 		t.Logf("测试实例正确：输入的是%d，返回状态是%v, 它是不是素数，与期望相同。", r, s)
 	} else {
 		t.Errorf("测试实例失败：输入的是%d，返回状态是%v，它本来不是素数，测试结果为素数。", r, s)
+	}
+
+	for _, ch := range chs {
+		fmt.Println(<-ch)
 	}
 }
 

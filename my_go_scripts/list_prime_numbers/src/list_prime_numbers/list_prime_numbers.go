@@ -33,12 +33,24 @@ func main() {
 		log.Fatalf("第一个整数必须小于第二个整数。")
 	}
 
+	chs := make([]chan int, numEnd-numStart+1)
+	i := 0
 	for num := numStart; num <= numEnd; num++ {
-		n, status := is_prime_number.IsPrimeNumber(num)
-		if status == true {
-			fmt.Println(n)
+		chs[i] = make(chan int)
+		go is_prime_number.IsPrimeNumber(chs[i], num)
+		i++
+	}
+
+	var primeNumbers []int
+
+	for _, ch := range chs {
+		tmp := <-ch
+		if tmp != 0 {
+			primeNumbers = append(primeNumbers, tmp)
 		}
 	}
+
+	fmt.Println(primeNumbers)
 }
 
 /*
@@ -46,4 +58,11 @@ func main() {
 real    5m28.729s
 user    5m27.186s
 sys     0m1.216s
+*/
+
+/*
+# time go run list_prime_numbers.go 1 1000000	# 改版后的所消耗的时间
+real    1m34.656s
+user    11m28.946s
+sys     0m3.801s
 */
