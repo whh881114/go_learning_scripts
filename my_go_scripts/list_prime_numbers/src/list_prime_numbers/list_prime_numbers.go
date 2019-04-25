@@ -40,3 +40,10 @@ func main() {
 		}
 	}
 }
+
+/*
+# time go run list_prime_numbers.go 1 1000000	# 执行命令所花费的时间
+real    5m28.729s
+user    5m27.186s
+sys     0m1.216s
+*/
