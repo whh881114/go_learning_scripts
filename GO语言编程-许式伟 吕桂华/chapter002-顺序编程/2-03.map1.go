@@ -23,10 +23,18 @@ func main() {
 
 	// 从这个map查找键为"1234"的信息
 	person, ok := personDB["1234"]
-
 	if ok {
 		fmt.Println("Found person", person.Name, "with ID 1234.")
 	} else {
 		fmt.Println("Did not find person with ID 1234.")
+	}
+
+	// 元素删除
+	delete(personDB, "1")
+	person, ok = personDB["1"]
+	if ok {
+		fmt.Println("Found person", person.Name, "with ID 1.")
+	} else {
+		fmt.Println("Did not find person with ID 1.")
 	}
 }
