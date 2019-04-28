@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"goTraining/chapter014/calc/src/simplemath"
+	"goTraining/GO语言编程-黄靖钧"
 	"os"
 	"strconv"
 )
@@ -44,7 +44,7 @@ func main() {
 			return
 		}
 
-		ret := simplemath.Add(v1, v2)
+		ret := GO语言编程_黄靖钧.Add(v1, v2)
 		fmt.Println("Result: ", ret)
 
 	case "sqrt":
@@ -57,7 +57,7 @@ func main() {
 			fmt.Println("USAGE: calc sqrt <integer>")
 			return
 		}
-		ret := simplemath.Sqrt(v)
+		ret := GO语言编程_黄靖钧.Sqrt(v)
 		fmt.Println("Result: ", ret)
 
 	default:

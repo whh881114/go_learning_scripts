@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"goTraining/GO语言编程-黄靖钧"
+	"testing"
+)
 
 // TestPrime测试
 func TestPrime(t *testing.T) {
@@ -18,7 +21,7 @@ func TestPrime(t *testing.T) {
 	}
 
 	for _, tt := range primeTests {
-		actual := isPrime(tt.input)
+		actual := GO语言编程_黄靖钧.isPrime(tt.input)
 		if actual != tt.expected {
 			t.Errorf("%d %v %v", tt.input, actual, tt.expected)
 		}
