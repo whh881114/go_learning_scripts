@@ -38,6 +38,7 @@ func main() {
 	fmt.Println(string(byteArray))
 
 	// 作业题：hello --> olloh
+	// 方法一
 	s6 := "hello"
 	s7 := []byte(s6)
 	s8 := []byte(s6)
@@ -45,4 +46,21 @@ func main() {
 		s8[i] = s7[len(s7)-i-1]
 	}
 	fmt.Println(string(s8))
+
+	// 方法二
+	s9 := "hello"
+	s10 := ""
+	byteArrayS9 := []byte(s9)
+	for i := len(byteArrayS9) - 1; i >= 0; i-- {
+		s10 = s10 + string(byteArrayS9[i])
+	}
+	fmt.Println(s10)
+
+	// 方法三
+	s11 := "hello"
+	s12 := []byte(s11)
+	for i := 0; i < len(s12)/2; i++ {
+		s12[i], s12[len(s12)-1-i] = s12[len(s12)-1-i], s12[i]
+	}
+	fmt.Println(string(s12))
 }
