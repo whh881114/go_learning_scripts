@@ -114,22 +114,12 @@ func main() {
 
 	// 作业：统计一个字符串中每个单词出现的次数。仅限英文字符统计。
 	// "the quick brown fox jumps over a lazy dog"
-	var exString = "the quick brown fox jumps over a lazy dog"
+	var exString = "the quick brown fox jumps over a lazy dog. 汪浩浩，what the f..."
 	var wordMap = make(map[string]int)
-	var wordArray = []string{}
 	var wordUniq = []string{}
 
-	for i := 0; i < len(exString); i++ {
-		word := fmt.Sprintf(string(exString[i]))
-		if word == " " {
-			continue
-		} else {
-			wordArray = append(wordArray, word)
-		}
-	}
-
-	for _, word := range wordArray {
-		wordMap[word]++
+	for _, word := range exString {
+		wordMap[string(word)]++
 	}
 
 	for k := range wordMap {
@@ -138,6 +128,6 @@ func main() {
 	sort.Strings(wordUniq)
 
 	for _, word := range wordUniq {
-		fmt.Printf("字母\"%s\"出现的次数：%d。\n", word, wordMap[word])
+		fmt.Printf("字符\"%s\"出现的次数：%d。\n", word, wordMap[word])
 	}
 }
