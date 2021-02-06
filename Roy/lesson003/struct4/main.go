@@ -14,9 +14,13 @@ func (a *animal) move() {
 }
 
 type dog struct {
-	name   string
-	feet   int
-	animal animal
+	feet int
+	// animal animal <==> animal ，如果使用这两种写法，那么只会继承到animal的方法，访问不到animal的属性。所以这个就是值引用。
+	// 后面他要调用其animal函数时，不需要对animal属性进行初始化。
+
+	// 像这样写，就是引用了animal类型，dog这个struct就是继承animal的属性和方法。此后，要使用animal变量的时候，需要对它进行初始化。
+	// a.animal = new(animal)，肯定要使用这个写法了。
+	*animal
 }
 
 func (d *dog) wangwang() {
@@ -25,10 +29,9 @@ func (d *dog) wangwang() {
 
 func main() {
 	var a = new(dog)
+	a.animal = new(animal)
 	a.name = "wanghaohao"
 	a.feet = 4
 	a.wangwang()
-
-	a.animal.name = "Roy"
 	a.animal.move()
 }
