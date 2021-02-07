@@ -14,8 +14,14 @@ func main() {
 	fmt.Println("-- 获取当前时间，格式化输出2017/06/19 20:30:05格式。")
 	fmt.Println("--", now.Format("2006/01/02 15:04:05"))
 
+	// 方法一
 	start := time.Now().UnixNano() / 1000
 	time.Sleep(time.Millisecond * 30)
 	end := time.Now().UnixNano() / 1000
 	fmt.Println("程序运行时间（微秒）：", end-start)
+
+	// 方法二
+	start2 := time.Now()
+	time.Sleep(time.Millisecond * 30)
+	fmt.Println("程序运行时间（微秒）：", time.Since(start2))
 }
