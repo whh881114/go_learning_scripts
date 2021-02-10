@@ -8,7 +8,7 @@ func send(ch chan int) {
 	for i := 0; i < 10; i++ {
 		ch <- i
 	}
-	close(ch)
+	close(ch) // 不像打开的文件必须在代码中显式的关闭。
 }
 
 func main() {
