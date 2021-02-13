@@ -26,4 +26,10 @@ func TestSplit(t *testing.T) {
 	if ok := reflect.DeepEqual(got, want); !ok {
 		t.Fatalf("期望得到：%v，实际得到：%v\n", want, got)
 	}
+
+	got = Split("xabyabz;", "ab")
+	want = []string{"x", "y", "z;"}
+	if ok := reflect.DeepEqual(got, want); !ok {
+		t.Fatalf("期望得到：%v，实际得到：%v\n", want, got)
+	}
 }
