@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>获取用户输入</title>
+</head>
+<body>
+    <h1>获取注册</h1>
+
+    <input type="date">
+    <input type="number">
+    <input type="email">
+
+    <form action="">
+        <dirv>
+            <label for="username">用户名：</label>
+            <input id="username" name="username" type="text" placeholder="沙河小王子">
+        </dirv>
+
+        <div>
+            <label>密码：<input name="password" type="password"></label>
+        </div>
+
+        <div>
+            <label for="gender">性别：</label>
+            <input name="gender" value="male" type="radio">男
+            <input name="gender" value="female" type="radio">女
+        </div>
+
+        <div>
+            <label>爱好</label>
+            <input type="checkbox" value="basketball">篮球
+            <input type="checkbox" value="foottball">足球
+            <input type="checkbox" value="doublecolorball">双色球
+        </div>
+
+        <div>
+            <label>头像：</label>
+            <input type="file" name="avatar" accept="image/*">
+        </div>
+
+        <div>
+            <label>个性签名：</label>
+            <textarea name="info" cols="30" rows="10"></textarea>
+        </div>
+
+        <div>
+            <input type="submit" value="提交">
+        </div>
+
+        <div>
+            <input type="reset" value="重置">
+        </div>
+
+        <div>
+            <input type="button" value="普通按钮">
+        </div>
+
+        <div>
+            <label>地址</label>
+            <select name="addr" id="s1">
+                <option value="010">北京</option>
+                <option value="021">上海</option>
+            </select>
+        </div>
+    </form>
+</body>
+</html>
