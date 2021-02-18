@@ -9,8 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-
-	// "strconv"
+	"strconv"
 	"strings"
 )
 
@@ -26,8 +25,59 @@ type logFile struct {
 	LogFiles       []string
 }
 
-func (logfile *logFile) getLogFiles(logFile logFile) {
+func (logfile *logFile) getLogFiles() {
+	// 支持日志文件中日期格式：":", "-", "."和"_"
+	var logFileSeps = []string{":", "-", ".", "_"}
+	logfile.LogFiles = make([]string, 0)
+	// wildcardMaxNum还需要加1是因为最后的日志文件中包含中一个"*"，来达到支持三层目录通配。
+	wildcardMaxNum := 3
 
+	for _, logFileSep := range logFileSeps {
+		// 支持目录通配符，最大支持三层目录通配，如/tmp/*/*/*/*.log，第一层目录不能为"*"。
+		wildcardNum := strings.Count(logfile.LogFilePattern, "/*/")
+		if wildcardNum > wildcardMaxNum {
+			log.Warnf("配置项中，支持目录通配符，最大支持三层目录通配，如/tmp/*/*/*/*.log，不支持多个*。")
+			return
+		}
+
+		if strings.Index(logfile.LogFilePattern, "/*/") == 0 {
+			log.Warnf("配置项中，第一层目录不能为\"*\"。")
+			return
+		}
+
+		logFileList := strings.Split(logfile.LogFilePattern, "/")
+		logFileList = logFileList[1:] // 去掉最前面的空字符串
+		logFileFlag := logFileList[len(logFileList)-1]
+		if !strings.Contains(logFileFlag, "*") {
+			log.Warnf("配置项中，最后日志文件中没有通配符\"*\"，这个是不可以的，因为当前不能根据给出的目录删除何种日志文件。")
+			return
+		}
+		var topLogFileDir string
+		topLogFileDir += "/" + logFileList[0]
+		i := 0
+	LOOP1:
+		dirs, _ := ioutil.ReadDir(topLogFileDir)
+		for _, dir := range dirs {
+			if dir.IsDir() {
+				i++
+				topLogFileDir += "/" + dir.Name()
+				fmt.Printf("LOOP1: %v\n", topLogFileDir)
+				if i != wildcardNum {
+					goto LOOP1
+				}
+				goto LOOP2
+			}
+		}
+	LOOP2:
+		fmt.Printf("LOOP2: %v\n", topLogFileDir)
+		dirs2, _ := ioutil.ReadDir(topLogFileDir)
+		for _, dir := range dirs2 {
+			if dir.IsDir() {
+				logfile.LogFiles = append(logfile.LogFiles, dir.Name())
+			}
+		}
+		fmt.Println(logFileSep)
+	}
 }
 
 func (logfile *logFile) delLogFiles() {
@@ -51,64 +101,23 @@ func getConfFiles(confDir string) []string {
 			}
 		}
 	}
-
-	if len(confFiles) == 0 {
-		log.Warnf("配置文件目录\"%s\"下无配置文件。", confDir)
-	}
-
 	return confFiles
 }
 
 // 过滤掉以#开头的注释。
-func filterExplanations(str string) {
-	// var logFilePattern string
-	// var remainedDays int
-
-	// re := regexp.MustCompile("^/.*(/.*)+:\\ +[0-9]+")
-	// fmt.Printf("%q\n", re.FindString(str))
-
-	// ok, _ := regexp.Match("^/.*(/.*)*: +\\d+$", []byte(str))
-	// ok, err := regexp.Match(`^/.*(/.*)*: +\\d+$`, []byte(str))
-	// if ok {
-	// 	fmt.Print(str)
-	// 	fmt.Println("匹配到了")
-	// 	fmt.Println()
-	// } else {
-	// 	fmt.Println(err)
-	// }
-
+func getConfItem(str string) {
 	reg, _ := regexp.Compile("^(/.*(/.*)*):\\s+(\\d+)\\s*$")
-	strings := reg.FindAllSubmatch([]byte(str), -1)
+	regStrings := reg.FindAllSubmatch([]byte(str), -1)
 
-	for _, str := range strings {
-		fmt.Print(string(str[1]))
-		fmt.Print("----------->")
-		fmt.Println(string(str[3]))
+	for _, str := range regStrings {
+		myLogFile := new(logFile)
+		myLogFile.LogFilePattern = string(str[1])
+		myLogFile.RemainedDays, _ = strconv.Atoi(string(str[3]))
+		logFiles = append(logFiles, myLogFile)
 	}
-
-	// reg := regexp.MustCompile("^/.*(/.*)*:\\s+\\d+\\s*$")
-	// fmt.Printf("%q\n", reg.FindAllString(str, -1))
-
-	// if ok {
-	// 	log.Infof("解析到配置项：%s", str)
-	// 	ret := strings.Split(str, ":")
-	// 	logFilePattern = strings.TrimSpace(ret[0])
-	// 	value, err := strconv.Atoi(strings.TrimSpace(ret[1]))
-	// 	if err != nil {
-	// 		log.Warnf("配置项\"%s\"的值不正确，应该要为整型。", str)
-	// 	}
-	// 	remainedDays = value
-	// }
-	//
-	// myLogFile := logFile{
-	// 	LogFilePattern: logFilePattern,
-	// 	RemainedDays:   remainedDays,
-	// }
-	// logFiles = append(logFiles, &myLogFile)
 }
 
 // parseConfFile 解析yaml配置文件
-// func parseConfFile(confFile string) (logFile, error) {
 func parseConfFile(confFile string) {
 	f, err := os.Open(confFile)
 	if err != nil {
@@ -120,42 +129,14 @@ func parseConfFile(confFile string) {
 	for {
 		str, err := reader.ReadString('\n')
 		if err == io.EOF {
+			getConfItem(str)
 			return
 		}
 		if err != nil {
 			log.Warnf("读取配置项\"%s\"失败。具体报错：%v\n", str, err)
 		}
-		filterExplanations(str)
+		getConfItem(str)
 	}
-
-	// config, err := ioutil.ReadFile(confFile)
-	// if err != nil {
-	// 	log.Warnf("打开配置文件目录\"%s\"失败。", confFile)
-	// }
-	//
-	// // fmt.Println(string(config))
-	//
-	// if err := yaml.Unmarshal(config, &settings); err != nil {
-	// 	log.Warnf("Warning: %v", err)
-	// }
-	// fmt.Printf("%#v\n", settings)
-
-	// fmt.Println(settings.LogFilePattern)
-	// fmt.Println(settings.RemainedDays)
-
-	// var conf yamlConfFile
-	// yaml.Unmarshal(conf, &yamlConfFile{})
-	//
-	// if err != nil {
-	// 	log.Fatalf("配置文件\"%s\"无法被yaml解析。", yamlConfFile)
-	// }
-	// fmt.Println(string(yamlConfFile))
-	// fmt.Println(string(yamlConfFile))
-	//
-	// return logFile{
-	// 	LogFilePattern: "/some/path/file_pattern",
-	// 	RemainedDays:   0,
-	// }, err
 }
 
 func main() {
@@ -171,20 +152,26 @@ func main() {
 	flag.StringVar(&optDate, "date", "", "Set date (in format of YYYY-MM-DD) for debugging.")
 	flag.Parse()
 
+	// 获取配置目录下的配置文件。
 	confFiles := getConfFiles(optConfDir)
-	fmt.Println(confFiles)
+
+	if len(confFiles) == 0 {
+		log.Warnf("配置文件目录\"%s\"下无配置文件。", optConfDir)
+		return
+	} else {
+		log.Infof("配置文件目录\"%s\"下配置文件列表：%#v。\n", optConfDir, confFiles)
+	}
 
 	// 解析配置文件，配置文件默认存放在/etc/logdel.d中，文件是yaml格式。
 	for _, confFile := range confFiles {
 		parseConfFile(confFile)
-		// _, err := parseConfFile(confFile)
-		// if err != nil {
-		// 	continue
-		// }
-
 	}
 
 	// 根据获取到的每个配置项，获取到要删除的文件列表。
+	for _, item := range logFiles {
+		item.getLogFiles()
+		fmt.Println(item.LogFiles)
+	}
 
 	// 根据文件列表删除文件。
 }
