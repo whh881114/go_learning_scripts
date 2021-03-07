@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>我的个人中心</title>
+</head>
+<body>
+<div>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>姓名</th>
+                <th>密码</th>
+                <th>年龄</th>
+            </tr>
+        </thead>
+        <tbody>
+        {{ range $index, $user := . }}
+        <tr>
+            <td>{{ $index }}</td>
+            <td>{{ $user.UserName }}</td>
+            <td>{{ $user.Password }}</td>
+            <td>{{ $user.Age }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
