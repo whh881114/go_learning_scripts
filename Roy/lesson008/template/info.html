@@ -26,6 +26,18 @@
         {{ end }}
         </tbody>
     </table>
+
+    {{ with index . 1}}
+    <p>{{ kua .UserName}}</p>
+    {{ end }}
+
+    {{ with index . 2}}
+        <p>{{ kua .UserName}}</p>
+    {{ end }}
+
+    {{ with index . 3}}
+        <p>{{ kua .UserName}}</p>
+    {{ end }}
 </div>
 </body>
 </html>

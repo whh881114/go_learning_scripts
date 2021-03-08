@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	// "io/ioutil"
 	"html/template"
 	// "math/rand"
@@ -17,11 +19,11 @@ type User struct {
 
 func info(w http.ResponseWriter, r *http.Request) {
 	// 第一种访问方法。
-	// data, err := ioutil.ReadFile("./info.html")
-	// if err != nil {
-	// 	fmt.Println("Read file failed, err:", err)
-	// 	return
-	// }
+	htmlByte, err := ioutil.ReadFile("./info.html")
+	if err != nil {
+		fmt.Println("Read file failed, err:", err)
+		return
+	}
 	// num := rand.Intn(10)
 	// dataStr := string(data)
 	// if num > 5 {
@@ -31,12 +33,30 @@ func info(w http.ResponseWriter, r *http.Request) {
 	// }
 	// w.Write([]byte(dataStr))
 
+	// 添加自定义的方法要在parse模板文件之前添加
+	kuaFunc := func(arg string) (string, error) {
+		return arg + "真帅", nil
+	}
+
+	// 把自定义的函数告诉模板系统
+	// template.New("info")                                         // 创建一个template对象
+	// template.New("info").Funcs(template.FuncMap{"kua": kuaFunc}) // 给模板系统追加自定义函数
+	// 解析模板
+	// template.New("info").Funcs(template.FuncMap{"kua": kuaFunc}).Parse(string(htmlByte))
+
 	// 模板文件
-	t, err := template.ParseFiles("./info.html")
+	t, err := template.New("info").Funcs(template.FuncMap{"kua": kuaFunc}).Parse(string(htmlByte))
 	if err != nil {
 		fmt.Println("Read file failed, err:", err)
 		return
 	}
+
+	// 模板文件
+	// t, err := template.ParseFiles("./info.html")
+	// if err != nil {
+	// 	fmt.Println("Read file failed, err:", err)
+	// 	return
+	// }
 
 	// data := "<li><<我的世界v2>></li>"
 	// t.Execute(w, data)
