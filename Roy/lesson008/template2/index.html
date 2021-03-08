@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>template嵌套</title>
+</head>
+<body>
+    <h1>测试template嵌套语法</h1>
+    <hr>
+    {{ template "ul.html" }}
+    <hr>
+    {{/* 在index.html这个模板中调用另外的一个模板：ol.html */}}
+    {{ template "ol.html" }}
+</body>
+</html>
+
+{{/* 在index.html这个模板中定义了另外的一个模板：ol.html */}}
+{{ define "ol.html" }}
+<h1>这是ol.html</h1>
+<ol>
+    <li>吃饭</li>
+    <li>睡觉</li>
+    <li>打豆豆</li>
+</ol>
+{{ end }}
