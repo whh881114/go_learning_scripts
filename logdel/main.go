@@ -127,7 +127,7 @@ func getLogFiles(logItems []Items) []string {
 
 }
 
-func delLogFiles(logFiles []string) {
+func delLogFiles(logFile string) {
 	fmt.Println("删除文件")
 }
 
@@ -162,10 +162,15 @@ func main() {
 				log.Warnf("配置文件\"%s\"中无items配置项。\n", confFile)
 			} else {
 				logFiles := getLogFiles(logItems)
-
-				// 当dry-run为false时，就执行删除文件。
-				if !optDryRun {
-					delLogFiles(logFiles)
+				if optDryRun {
+					for _, logFile := range logFiles {
+						log.Debugf("当前运行在dry-run模式，仅显示被删除日志文件名：%s", logFile)
+					}
+				} else {
+					for _, logFile := range logFiles {
+						log.Infof("当前运行在删除模式，即将删除此日志文件：%s", logFile)
+						delLogFiles(logFile)
+					}
 				}
 			}
 		}
