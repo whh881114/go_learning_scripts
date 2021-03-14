@@ -1,0 +1,28 @@
+# logdel配置文件示例
+# global项为全局选项，以下是默认值，可以不配置。其中date_formats中MMDD格式可以为单数，如一月可以为01或1。
+# items项为具体项目配置，name和paths必填，如果在具体项目中配置了`remained_num`，`date_formats`和`suffifxes`就覆盖默认值。
+
+global:
+  remained_num: 7
+  date_formats:
+    - "YYYY-MM-DD"
+    - "YYYYMMDD"
+    - "YYYY_MM_DD"
+  suffixes:
+    - ".log"
+    - ".txt"
+
+items:
+  - name: "删除示例"
+    paths:
+      - "/tmp/1"
+      - "/tmp/1/2"
+
+  - name: "删除示例2"
+    remained_num: 3
+    date_formats:
+      - "YYYYMMDD"
+    suffixes:
+      - ".log"
+    path:
+      - "/tmp/*/*/*"
