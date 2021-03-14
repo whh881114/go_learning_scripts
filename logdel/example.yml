@@ -1,6 +1,11 @@
 # logdel配置文件示例
-# global项为全局选项，以下是默认值，可以不配置。其中date_formats中MMDD格式可以为单数，如一月可以为01或1。
-# items项为具体项目配置，name和paths必填，如果在具体项目中配置了`remained_num`，`date_formats`和`suffifxes`就覆盖默认值。
+#
+# o- 当前仅支持linux系统。
+#
+# o- global项为全局选项，以下是默认值，可以不配置。
+# 其中date_formats中MMDD格式固定，并且当前不支持单数表示，如一月写成1，一号写成1。
+#
+# o- items项为具体项目配置，name和paths必填，如果在具体项目中配置了`remained_num`，`date_formats`和`suffifxes`就覆盖默认值。
 
 global:
   remained_num: 7
@@ -9,7 +14,7 @@ global:
     - "YYYYMMDD"
     - "YYYY_MM_DD"
   suffixes:
-    - ".log"
+    - ".log"  # 额外支持这种类型的文件：xxx.log.20200101，即文件后缀名在日期格式前面。后缀名不区分大小写。当前仅支持英文后缀。
     - ".txt"
 
 items:
@@ -25,4 +30,4 @@ items:
     suffixes:
       - ".log"
     path:
-      - "/tmp/*/*/*"
+      - "/tmp/*/*/*"  # 当前不支持匹配符。

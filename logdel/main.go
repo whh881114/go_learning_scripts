@@ -5,11 +5,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -46,7 +46,7 @@ func getConfFiles(confDir string) []string {
 		if !file.IsDir() {
 			fileName := file.Name()
 			// 配置文件后缀名为`.yaml`或`.yml`。
-			if strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml") {
+			if strings.HasSuffix(strings.ToLower(fileName), ".yaml") || strings.HasSuffix(strings.ToLower(fileName), ".yml") {
 				confFiles = append(confFiles, optConfDir+"/"+file.Name())
 			}
 		}
@@ -123,12 +123,62 @@ func parseConf(confFile string, confData *Configurations) []Items {
 
 func getLogFiles(logItems []Items) []string {
 	logFiles := make([]string, 0)
-	return logFiles
 
+	for _, item := range logItems {
+		// 根据配置项目中的date_formats和suffixes进行组合拼一个正则。
+		tmpRegexpString := ""
+
+		// 先是根据文件后缀名进行分类。
+		for _, logSuffix := range item.Suffixes {
+			for _, dateFormat := range item.DateFormats {
+				tmpRegexpString += strings.ToLower(dateFormat) + strings.ToLower(logSuffix) + "$|"
+				tmpRegexpString += strings.ToLower(logSuffix) + strings.ToLower(dateFormat) + "$|"
+
+				tmpLogFiles := make([]string, 0)
+				regexpString := tmpRegexpString[:len(tmpRegexpString)-1]
+				regexpString = strings.ReplaceAll(regexpString, "yyyy", "\\d{4}")
+				regexpString = strings.ReplaceAll(regexpString, "mm", "\\d{2}")
+				regexpString = strings.ReplaceAll(regexpString, "dd", "\\d{2}")
+
+				// log.Infof("正则表达式：%s\n", regexpString)
+
+				for _, path := range item.Paths {
+					files, err := ioutil.ReadDir(path)
+					if err != nil {
+						log.Errorf("读取\"%s\"目录出错。错误为：%#v\n", path, err)
+						continue
+					} else {
+						log.Infof("读取\"%s\"目录成功。\n", path)
+					}
+
+					for _, file := range files {
+						if !file.IsDir() {
+							fileName := file.Name()
+
+							validString := regexp.MustCompile(regexpString)
+							if validString.MatchString(fileName) {
+								log.Infof("匹配成功：%s\n", fileName)
+								tmpLogFiles = append(tmpLogFiles, path+"/"+fileName)
+							} else {
+								log.Warnf("匹配失败：%s\n", fileName)
+							}
+						}
+					}
+				}
+				tmpLogFiles = tmpLogFiles[:len(tmpLogFiles)-item.RemainedNum+1]
+				logFiles = append(logFiles, tmpLogFiles...)
+			}
+		}
+	}
+	return logFiles
 }
 
 func delLogFiles(logFile string) {
-	fmt.Println("删除文件")
+	if err := os.Remove(logFile); err != nil {
+		log.Infof("文件删除失败：%s，原因：%#v\n", logFile, err)
+	} else {
+		log.Infof("文件删除成功：%s\n", logFile)
+	}
 }
 
 func main() {
@@ -161,15 +211,18 @@ func main() {
 			if len(logItems) == 0 {
 				log.Warnf("配置文件\"%s\"中无items配置项。\n", confFile)
 			} else {
-				logFiles := getLogFiles(logItems)
-				if optDryRun {
-					for _, logFile := range logFiles {
-						log.Debugf("当前运行在dry-run模式，仅显示被删除日志文件名：%s", logFile)
-					}
-				} else {
-					for _, logFile := range logFiles {
-						log.Infof("当前运行在删除模式，即将删除此日志文件：%s", logFile)
-						delLogFiles(logFile)
+				for _, logItem := range logItems {
+					log.Infof("配置文件\"%s\"中items配置项：%#v。\n", confFile, logItem)
+					logFiles := getLogFiles(logItems)
+					if optDryRun {
+						for _, logFile := range logFiles {
+							log.Infof("当前运行在dry-run模式，仅显示被删除日志文件名：%s", logFile)
+						}
+					} else {
+						for _, logFile := range logFiles {
+							log.Infof("当前运行在删除模式，即将删除此日志文件：%s", logFile)
+							delLogFiles(logFile)
+						}
 					}
 				}
 			}
