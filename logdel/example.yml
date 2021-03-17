@@ -25,8 +25,9 @@ items:
     date_formats:
       - "YYYYMMDD"
     suffixes:
-      - ".log"
+      - ".log.gz"
+      - ".log.tar.gz"
     paths:
-      - "/tmp/3"
+      - "/tmp"
       - "/tmp/1/2/3"
       # - "/tmp/*/*/*"  # 当前不支持匹配符。后续可以考虑支持。

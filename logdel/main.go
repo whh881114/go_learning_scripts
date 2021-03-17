@@ -124,22 +124,18 @@ func parseConf(confFile string, confData *Configurations) []Items {
 
 func delLogFiles(logItems []Items, optDryRun bool) {
 	for _, item := range logItems {
+		log.Infof("开始处理配置文件中items配置项：%#v。\n", item)
+
 		// 第一步，生成正则表达式。
 		regexpString := ""
 		tmpRegexpString := ""
-		for _, logSuffix := range item.Suffixes {
-			for _, dateFormat := range item.DateFormats {
-				tmpRegexpString += strings.ToLower(dateFormat) + strings.ToLower(logSuffix) + "$|"
-				tmpRegexpString += strings.ToLower(logSuffix) + strings.ToLower(dateFormat) + "$|"
-
-				regexpString = tmpRegexpString[:len(tmpRegexpString)-1]
-				regexpString = strings.ReplaceAll(regexpString, "yyyy", "\\d{4}")
-				regexpString = strings.ReplaceAll(regexpString, "mm", "\\d{1,2}")
-				regexpString = strings.ReplaceAll(regexpString, "dd", "\\d{1,2}")
-			}
+		for _, dateFormat := range item.DateFormats {
+			tmpRegexpString += strings.ToLower(dateFormat) + "|"
+			regexpString = tmpRegexpString[:len(tmpRegexpString)-1]
+			regexpString = strings.ReplaceAll(regexpString, "yyyy", "\\d{4}")
+			regexpString = strings.ReplaceAll(regexpString, "mm", "\\d{1,2}")
+			regexpString = strings.ReplaceAll(regexpString, "dd", "\\d{1,2}")
 		}
-
-		log.Infof("开始处理配置文件中items配置项：%#v。\n", item)
 
 		// 第二步，读取目录，进行匹配文件。
 		for _, path := range item.Paths {
@@ -155,20 +151,38 @@ func delLogFiles(logItems []Items, optDryRun bool) {
 			for _, file := range files {
 				if !file.IsDir() {
 					fileName := file.Name()
+					logFile := path + string(os.PathSeparator) + fileName
+
+					// 首先，匹配文件名中的日期格式。
 					validString := regexp.MustCompile(regexpString)
 					if validString.MatchString(fileName) {
-						log.Infof("文件名格式匹配成功：%s。\n", fileName)
-						currentTime := time.Now()
-						remainedTime := currentTime.AddDate(0, 0, -item.RemainedDays)
-						if file.ModTime().After(remainedTime) {
-							log.Warnf("\"%s\"文件在保留时间内，其文件最后修改时间：%v\n", fileName, file.ModTime())
-						} else {
-							log.Infof("%s文件不在保留时间内，文件最后修改时间：%v\n", fileName, file.ModTime())
-							logFile := path + string(os.PathSeparator) + fileName
-							if err := os.Remove(logFile); err != nil {
-								log.Infof("文件删除失败：%s，原因：%#v\n", logFile, err)
-							} else {
-								log.Infof("文件删除成功：%s\n", logFile)
+						log.Infof("文件日期格式匹配成功：%s。\n", logFile)
+
+						// 然后，匹配文件后缀名。
+						for _, logSuffix := range item.Suffixes {
+							if strings.HasSuffix(fileName, logSuffix) {
+								log.Infof("文件后缀名匹配成功：%s。\n", logFile)
+
+								// 随后，判断文件时间是否在保留日期内。
+								currentTime := time.Now()
+								remainedTime := currentTime.AddDate(0, 0, -item.RemainedDays)
+								if file.ModTime().After(remainedTime) {
+									log.Warnf("\"%s\"文件在保留时间内，其文件最后修改时间：%v\n", logFile, file.ModTime())
+								} else {
+									log.Infof("%s文件不在保留时间内，文件最后修改时间：%v\n", logFile, file.ModTime())
+
+									// 最后，决定是否删除文件。
+									if optDryRun {
+										log.Infof("当前运行在dry-run模式下，仅显示被删除的文件：%s\n", logFile)
+									} else {
+										log.Infof("当前运行在非dry-run模式下，文件即将删除：%s\n", logFile)
+										if err := os.Remove(logFile); err != nil {
+											log.Infof("文件删除失败：%s，原因：%#v\n", logFile, err)
+										} else {
+											log.Infof("文件删除成功：%s\n", logFile)
+										}
+									}
+								}
 							}
 						}
 					}
