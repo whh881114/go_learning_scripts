@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var optConfDir string
@@ -22,17 +23,17 @@ type Configurations struct {
 }
 
 type Global struct {
-	RemainedNum int      `yaml:"remained_num"`
-	DateFormats []string `yaml:"date_formats"`
-	Suffixes    []string `yaml:"suffixes"`
+	RemainedDays int      `yaml:"remained_days"`
+	DateFormats  []string `yaml:"date_formats"`
+	Suffixes     []string `yaml:"suffixes"`
 }
 
 type Items struct {
-	Name        string   `yaml:"name"`
-	Paths       []string `yaml:"paths"`
-	RemainedNum int      `yaml:"remained_num"`
-	DateFormats []string `yaml:"date_formats"`
-	Suffixes    []string `yaml:"suffixes"`
+	Name         string   `yaml:"name"`
+	Paths        []string `yaml:"paths"`
+	RemainedDays int      `yaml:"remained_days"`
+	DateFormats  []string `yaml:"date_formats"`
+	Suffixes     []string `yaml:"suffixes"`
 }
 
 func getConfFiles(confDir string) []string {
@@ -75,13 +76,13 @@ func parseConf(confFile string, confData *Configurations) []Items {
 	instances := make([]Items, 0)
 
 	// 当全局参数没有配置时，使用默认值。
-	defaultRemainedNum := 7
+	defaultRemainedDays := 7
 	defaultDateFormats := []string{"YYYY-MM-DD", "YYYYMMDD", "YYYY_MM_DD"}
 	defaultSuffixes := []string{".log", ".txt"}
 
 	// 当全局参数配置时，覆盖默认值。
-	if confData.Global.RemainedNum != 0 {
-		defaultRemainedNum = confData.Global.RemainedNum
+	if confData.Global.RemainedDays != 0 {
+		defaultRemainedDays = confData.Global.RemainedDays
 	}
 
 	if len(confData.Global.DateFormats) != 0 {
@@ -104,8 +105,8 @@ func parseConf(confFile string, confData *Configurations) []Items {
 			continue
 		}
 
-		if item.RemainedNum == 0 {
-			item.RemainedNum = defaultRemainedNum
+		if item.RemainedDays == 0 {
+			item.RemainedDays = defaultRemainedDays
 		}
 
 		if len(item.DateFormats) == 0 {
@@ -123,77 +124,58 @@ func parseConf(confFile string, confData *Configurations) []Items {
 
 func delLogFiles(logItems []Items, optDryRun bool) {
 	for _, item := range logItems {
-		// 先是根据文件后缀名进行分类。
+		// 第一步，生成正则表达式。
+		regexpString := ""
+		tmpRegexpString := ""
 		for _, logSuffix := range item.Suffixes {
-			// 创建临时数组，用于存放匹配到的文件。
-			logFiles := make([]string, 0)
-
 			for _, dateFormat := range item.DateFormats {
-				// 根据配置项目中的date_formats和suffixes进行组合拼一个正则。
-				regexpString := ""
-				tmpRegexpString := ""
-
 				tmpRegexpString += strings.ToLower(dateFormat) + strings.ToLower(logSuffix) + "$|"
 				tmpRegexpString += strings.ToLower(logSuffix) + strings.ToLower(dateFormat) + "$|"
 
 				regexpString = tmpRegexpString[:len(tmpRegexpString)-1]
 				regexpString = strings.ReplaceAll(regexpString, "yyyy", "\\d{4}")
-				regexpString = strings.ReplaceAll(regexpString, "mm", "\\d{2}")
-				regexpString = strings.ReplaceAll(regexpString, "dd", "\\d{2}")
+				regexpString = strings.ReplaceAll(regexpString, "mm", "\\d{1,2}")
+				regexpString = strings.ReplaceAll(regexpString, "dd", "\\d{1,2}")
+			}
+		}
 
-				for _, path := range item.Paths {
-					files, err := ioutil.ReadDir(path)
-					if err != nil {
-						log.Errorf("读取\"%s\"目录出错。错误为：%#v\n", path, err)
-						continue
-					} else {
-						log.Infof("读取\"%s\"目录成功。\n", path)
-					}
+		log.Infof("开始处理配置文件中items配置项：%#v。\n", item)
 
-					log.Infof("当前匹配模式：%#v\n", regexpString)
-					for _, file := range files {
-						if !file.IsDir() {
-							fileName := file.Name()
-							if strings.HasSuffix(strings.ToLower(fileName), logSuffix) {
-								validString := regexp.MustCompile(regexpString)
-								if validString.MatchString(fileName) {
-									// 匹配成功的文件则存入在临时的数组中。
-									log.Infof("匹配成功：%s\n", fileName)
-									logFiles = append(logFiles, path+"/"+fileName)
-								} else {
-									log.Warnf("匹配失败：%s\n", fileName)
-								}
-							}
-						}
-					}
+		// 第二步，读取目录，进行匹配文件。
+		for _, path := range item.Paths {
+			files, err := ioutil.ReadDir(path)
+			if err != nil {
+				log.Errorf("读取\"%s\"目录出错。错误为：%#v\n", path, err)
+				continue
+			} else {
+				log.Infof("读取\"%s\"目录成功。\n", path)
+			}
 
-					// 只有匹配到的文件大于需要保留的文件数时，才执行。
-					if len(logFiles) > item.RemainedNum {
-						logFiles = logFiles[:len(logFiles)-item.RemainedNum+1]
-
-						if optDryRun {
-							for _, logFile := range logFiles {
-								log.Infof("当前运行在dry-run模式，仅显示被删除日志文件名：%s", logFile)
-							}
+			log.Infof("当前匹配模式：%#v\n", regexpString)
+			for _, file := range files {
+				if !file.IsDir() {
+					fileName := file.Name()
+					validString := regexp.MustCompile(regexpString)
+					if validString.MatchString(fileName) {
+						log.Infof("文件名格式匹配成功：%s。\n", fileName)
+						currentTime := time.Now()
+						remainedTime := currentTime.AddDate(0, 0, -item.RemainedDays)
+						if file.ModTime().After(remainedTime) {
+							log.Warnf("\"%s\"文件在保留时间内，其文件最后修改时间：%v\n", fileName, file.ModTime())
 						} else {
-							for _, logFile := range logFiles {
-								log.Infof("当前运行在删除模式，即将删除此日志文件：%s", logFile)
-								if err := os.Remove(logFile); err != nil {
-									log.Infof("文件删除失败：%s，原因：%#v\n", logFile, err)
-								} else {
-									log.Infof("文件删除成功：%s\n", logFile)
-								}
+							log.Infof("%s文件不在保留时间内，文件最后修改时间：%v\n", fileName, file.ModTime())
+							logFile := path + string(os.PathSeparator) + fileName
+							if err := os.Remove(logFile); err != nil {
+								log.Infof("文件删除失败：%s，原因：%#v\n", logFile, err)
+							} else {
+								log.Infof("文件删除成功：%s\n", logFile)
 							}
 						}
-					} else {
-						log.Warnf("根据当前规划匹配不到文件或匹配到的文件数量少于预设值。\n")
 					}
-					logFiles = make([]string, 0)
 				}
 			}
 		}
 	}
-
 }
 
 func main() {
@@ -226,10 +208,7 @@ func main() {
 			if len(logItems) == 0 {
 				log.Warnf("配置文件\"%s\"中无items配置项。\n", confFile)
 			} else {
-				for _, logItem := range logItems {
-					log.Infof("配置文件\"%s\"中items配置项：%#v。\n", confFile, logItem)
-					delLogFiles(logItems, optDryRun)
-				}
+				delLogFiles(logItems, optDryRun)
 			}
 		}
 	}
